@@ -122,7 +122,74 @@ This document provides a technical and structural analysis of the three leading 
 1.  **Task Decomposition:** The Coordinator receives: *"Inspect the industrial boiler's thermal signature."* It breaks this down into two sub-goals:
     *   *Sub-goal 1:* Fly to boiler coordinates `(25, 45, 3)`.
     *   *Sub-goal 2:* Extract thermal signature and verify temperature thresholds.
-2.  **Task Delegation:** 
     *   The **Navigation Agent** commands the PX4 controller to fly to `(25, 45, 3)`.
     *   The **Perception Worker** watches the camera stream for the boiler's ID tag.
 3.  **Safety Intercept:** If the Navigation Agent commands a path crossing a geofence limit, the **Safeguard Agent** immediately overrides the command and forces a safe hover.
+
+---
+
+## 4. Control Loop Latency Decoupling (Cerebrum vs. Cerebellum)
+
+One of the greatest challenges in agentic robotics is the **order-of-magnitude mismatch** in control frequencies between LLM inference and raw flight dynamics:
+
+*   **Attitude/Rate Loop (PX4):** Runs at **250Hz - 800Hz** to stabilize quadcopter flight vectors.
+*   **Offboard Setpoint Heartbeat (ROS 2):** Requires a constant command flow at **10Hz - 50Hz**. If this heartbeat drops for more than 500ms, the PX4 Autopilot instantly fails-safe (failsafe hover or land) to prevent flyaways.
+*   **Cognitive Loop (LLM):** Takes **300ms - 2500ms** to generate a single decision.
+
+To bridge this, we use a **Decoupled Asynchronous Controller**:
+
+```text
+  +-----------------------------------------------------------+
+  |              Cognitive Agent (Slow Loop: ~0.5Hz)          |
+  |  - Reasoning & Decision Making                            |
+  |  - Emits: Target Coordinate (e.g. NAVIGATE_TO(25, 45, 5))  |
+  +-----------------------------+-----------------------------+
+                                |
+                                | Writes Target Setpoint (Async)
+                                v
+  +-----------------------------------------------------------+
+  |              Offboard Node (Fast Loop: 20Hz - 50Hz)       |
+  |  - Continuously sends vehicle_command heatbeats to PX4    |
+  |  - Calculates intermediate step vectors (Interpolation)   |
+  |  - Actively reads current state odometry                  |
+  +-----------------------------------------------------------+
+```
+
+---
+
+## 5. Mathematical & Spatial Grounding in Prompting
+
+To navigate successfully, the LLM must translate visual pixels or relative positions into metric setpoints. This is accomplished using **Visual Coordinate Projection**:
+
+$$\begin{bmatrix} X_c \\ Y_c \\ Z_c \end{bmatrix} = R \cdot \begin{bmatrix} X_w \\ Y_w \\ Z_w \end{bmatrix} + T$$
+
+1.  **Pixel Projection:** An object spotted at pixel coordinates $[u, v]$ by the downward camera is projected onto the ground plane using the current altitude $z$ and camera field-of-view (FOV) angles.
+2.  **Relative Metric Estimation:** The perception node converts this into a relative vector $(\Delta x, \Delta y)$ in meters from the drone.
+3.  **Prompt Grounding:** Instead of feeding raw images, the perception node populates the text context:
+    > *"Object identified: Lost Hiker. Estimated location: 12 meters East, 4 meters North of current position."*
+4.  **Vector Calculation:** The LLM reads this and mathematically adds the delta values to its current position $(X, Y)$ to issue the precise command:
+    > `ACTION: NAVIGATE_TO(current_x + 12, current_y + 4, 3)`
+
+---
+
+## 6. Rule-Based Deterministic Safety Interceptors
+
+Because LLMs can hallucinate or output out-of-bounds variables, the system implements **deterministic runtime filters** (guardrails) before any command reaches the hardware.
+
+```text
+  [LLM Output Command] ---> [Regex Syntax Validator]
+                                   | (Valid format?)
+                                   +--> NO  --> [Fallback Autopilot Override]
+                                   | YES
+                                   v
+                      [Geofence & Range Validator]
+                                   | (Within 0-100m, altitude < 30m?)
+                                   +--> NO  --> [Clamp Values / Force Safe Hover]
+                                   | YES
+                                   v
+                      [PX4 Flight Controller (Hardware)]
+```
+
+*   **Syntax Check:** If the LLM generates a malformed command (e.g., `NAV_TO(x=10)` instead of `NAVIGATE_TO(10, 0, 5)`), the parser catches the regex failure and falls back to a deterministic state machine.
+*   **Physical Clamp:** If the LLM commands an altitude of $Z = 500\text{m}$, the low-level ROS node intercepts this and clamps the value to the maximum geofenced altitude of $Z = 30\text{m}$.
+
