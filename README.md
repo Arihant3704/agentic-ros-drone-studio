@@ -2,6 +2,8 @@
 
 An advanced, high-fidelity Agentic ROS 2 drone simulation and telemetry studio. This project combines a cognitive AI planner (local Ollama LLM) using ReAct reasoning loop design with low-level PX4 Autopilot flight mechanics. It includes both a self-contained Web GUI simulator (glassmorphism HUD, canvas arena, live node graph) and a deployable ROS 2 Workspace for physical Gazebo SITL simulation.
 
+![Dashboard UI](assets/dashboard.png)
+
 ---
 
 ## 1. System Architecture
