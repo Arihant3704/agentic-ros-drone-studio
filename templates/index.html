@@ -1,0 +1,1249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agentic ROS Drone Simulation Studio</title>
+    <!-- Include Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Modern Glassmorphic Design System */
+        :root {
+            --bg-base: hsl(230, 25%, 6%);
+            --bg-surface: hsla(230, 20%, 12%, 0.6);
+            --bg-card: hsla(230, 20%, 15%, 0.45);
+            --border-glow: hsla(230, 15%, 25%, 0.5);
+            --accent-cyan: hsl(185, 100%, 50%);
+            --accent-cyan-glow: hsla(185, 100%, 50%, 0.35);
+            --accent-green: hsl(140, 100%, 48%);
+            --accent-green-glow: hsla(140, 100%, 48%, 0.35);
+            --accent-red: hsl(355, 100%, 55%);
+            --accent-red-glow: hsla(355, 100%, 55%, 0.35);
+            --accent-purple: hsl(275, 100%, 65%);
+            --accent-purple-glow: hsla(275, 100%, 65%, 0.35);
+            --text-main: hsl(210, 20%, 92%);
+            --text-muted: hsl(215, 15%, 65%);
+            --font-display: 'Outfit', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+            --glass-blur: blur(12px);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-base);
+            background-image: 
+                radial-gradient(circle at 10% 20%, hsla(230, 20%, 12%, 1) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, hsla(275, 20%, 10%, 1) 0%, transparent 40%);
+            color: var(--text-main);
+            font-family: var(--font-display);
+            min-height: 100vh;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: hsla(230, 15%, 25%, 0.8);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-cyan);
+        }
+
+        /* Navbar */
+        header {
+            background: hsla(230, 25%, 4%, 0.7);
+            backdrop-filter: var(--glass-blur);
+            border-bottom: 1px solid var(--border-glow);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .logo-icon {
+            width: 24px;
+            height: 24px;
+            border: 3px solid var(--accent-cyan);
+            border-radius: 6px;
+            box-shadow: 0 0 10px var(--accent-cyan-glow);
+            animation: pulse-glow 2s infinite alternate;
+        }
+
+        h1 {
+            font-size: 1.35rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            background: linear-gradient(to right, var(--text-main), var(--accent-cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .system-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            background: hsla(230, 10%, 15%, 0.6);
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            border: 1px solid var(--border-glow);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: var(--accent-green);
+            box-shadow: 0 0 8px var(--accent-green);
+        }
+
+        /* Main Dashboard Grid Layout */
+        main {
+            display: grid;
+            grid-template-columns: 320px 1fr 400px;
+            gap: 1.25rem;
+            padding: 1.25rem;
+            flex: 1;
+            height: calc(100vh - 65px);
+            max-height: calc(100vh - 65px);
+        }
+
+        .column {
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        /* Glassmorphism Panel Wrapper */
+        .panel {
+            background: var(--bg-surface);
+            backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--border-glow);
+            border-radius: 12px;
+            padding: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+            position: relative;
+        }
+
+        .panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--border-glow), transparent);
+        }
+
+        .panel-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.75px;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            color: var(--text-main);
+            border-bottom: 1px solid hsla(230, 15%, 25%, 0.3);
+            padding-bottom: 0.5rem;
+        }
+
+        .panel-title span.accent {
+            color: var(--accent-cyan);
+            font-size: 0.8rem;
+        }
+
+        /* HUD Section */
+        .hud-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .hud-card {
+            background: var(--bg-card);
+            border: 1px solid hsla(230, 15%, 25%, 0.3);
+            border-radius: 8px;
+            padding: 0.75rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .hud-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            letter-spacing: 0.5px;
+        }
+
+        .hud-value {
+            font-size: 1.2rem;
+            font-weight: 700;
+            font-family: var(--font-mono);
+            color: var(--text-main);
+        }
+
+        .hud-value.highlight-cyan { color: var(--accent-cyan); }
+        .hud-value.highlight-green { color: var(--accent-green); }
+        .hud-value.highlight-red { color: var(--accent-red); }
+
+        .battery-bar-container {
+            width: 100%;
+            height: 6px;
+            background: hsla(230, 10%, 25%, 0.5);
+            border-radius: 3px;
+            margin-top: 4px;
+            overflow: hidden;
+        }
+
+        .battery-bar-fill {
+            height: 100%;
+            width: 100%;
+            background: linear-gradient(90deg, var(--accent-red), var(--accent-green));
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+
+        /* Mode & Command Status Control HUD */
+        .flight-status-indicator {
+            background: var(--bg-card);
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.75rem;
+            border-left: 4px solid var(--accent-cyan);
+        }
+
+        .status-armed { border-left-color: var(--accent-red); }
+        .status-disarmed { border-left-color: var(--text-muted); }
+
+        .status-indicator-info {
+            display: flex;
+            flex-direction: column;
+            gap: 0.15rem;
+        }
+
+        /* Button controls */
+        .btn-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        button {
+            background: hsla(230, 15%, 25%, 0.4);
+            color: var(--text-main);
+            border: 1px solid var(--border-glow);
+            padding: 0.6rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: var(--font-display);
+            font-size: 0.8rem;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        button:hover {
+            background: hsla(230, 20%, 30%, 0.6);
+            border-color: var(--text-muted);
+        }
+
+        button.btn-accent {
+            background: linear-gradient(135deg, hsla(185, 100%, 50%, 0.2), hsla(230, 25%, 15%, 0.5));
+            border-color: var(--accent-cyan);
+            color: var(--accent-cyan);
+        }
+
+        button.btn-accent:hover {
+            background: var(--accent-cyan);
+            color: var(--bg-base);
+            box-shadow: 0 0 10px var(--accent-cyan-glow);
+        }
+
+        button.btn-red {
+            background: linear-gradient(135deg, hsla(355, 100%, 55%, 0.15), hsla(230, 25%, 15%, 0.5));
+            border-color: var(--accent-red);
+            color: var(--accent-red);
+        }
+
+        button.btn-red:hover {
+            background: var(--accent-red);
+            color: var(--text-main);
+            box-shadow: 0 0 10px var(--accent-red-glow);
+        }
+
+        .select-input {
+            width: 100%;
+            background: hsla(230, 20%, 10%, 0.8);
+            border: 1px solid var(--border-glow);
+            color: var(--text-main);
+            padding: 0.6rem;
+            border-radius: 6px;
+            font-family: var(--font-display);
+            font-size: 0.8rem;
+            margin-bottom: 0.75rem;
+            cursor: pointer;
+            outline: none;
+        }
+
+        /* Simulation Canvas Panel */
+        .simulator-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        .canvas-container {
+            flex: 1;
+            background: hsla(230, 30%, 3%, 0.85);
+            border-radius: 8px;
+            border: 1px solid hsla(230, 15%, 20%, 0.5);
+            overflow: hidden;
+            position: relative;
+            min-height: 0;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* ROS 2 Node Graph Visualization */
+        .graph-panel {
+            height: 240px;
+            min-height: 240px;
+        }
+
+        .graph-container {
+            flex: 1;
+            background: hsla(230, 25%, 4%, 0.65);
+            border-radius: 8px;
+            border: 1px solid hsla(230, 15%, 20%, 0.4);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* ROS 2 Topic Table */
+        .topic-panel {
+            flex: 1;
+            min-height: 0;
+        }
+
+        .table-container {
+            flex: 1;
+            overflow-y: auto;
+            border: 1px solid hsla(230, 15%, 20%, 0.4);
+            border-radius: 8px;
+            background: hsla(230, 30%, 4%, 0.4);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.75rem;
+            font-family: var(--font-mono);
+        }
+
+        th {
+            background: hsla(230, 20%, 8%, 0.9);
+            color: var(--text-muted);
+            text-align: left;
+            padding: 0.5rem 0.75rem;
+            font-weight: 600;
+            border-bottom: 1px solid var(--border-glow);
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+
+        td {
+            padding: 0.5rem 0.75rem;
+            border-bottom: 1px solid hsla(230, 15%, 18%, 0.3);
+            color: var(--text-main);
+            vertical-align: top;
+        }
+
+        tr:hover {
+            background: hsla(230, 20%, 15%, 0.3);
+        }
+
+        .topic-name {
+            color: var(--accent-cyan);
+            font-weight: 700;
+        }
+
+        .topic-hz {
+            color: var(--accent-green);
+        }
+
+        .topic-payload {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            white-space: pre-wrap;
+            word-break: break-all;
+            max-width: 220px;
+        }
+
+        /* AI Reasoning Console */
+        .reasoning-panel {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .terminal {
+            flex: 1;
+            background: hsl(230, 35%, 3%);
+            border-radius: 8px;
+            border: 1px solid hsla(230, 15%, 15%, 0.8);
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
+            line-height: 1.4;
+            padding: 0.75rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+        }
+
+        .log-entry {
+            border-radius: 4px;
+            padding: 0.4rem 0.6rem;
+            background: hsla(230, 15%, 15%, 0.25);
+            border-left: 3px solid transparent;
+        }
+
+        .log-time {
+            color: var(--text-muted);
+            font-size: 0.65rem;
+            margin-bottom: 0.15rem;
+            display: block;
+        }
+
+        .log-entry.log-user {
+            border-left-color: var(--accent-cyan);
+            background: rgba(0, 242, 254, 0.05);
+        }
+        .log-entry.log-thought {
+            border-left-color: var(--accent-purple);
+            background: rgba(175, 82, 255, 0.04);
+            color: #d1b3ff;
+        }
+        .log-entry.log-action {
+            border-left-color: hsl(45, 100%, 50%);
+            background: rgba(255, 191, 0, 0.04);
+            color: #ffe082;
+        }
+        .log-entry.log-system {
+            border-left-color: var(--accent-green);
+            background: rgba(0, 255, 128, 0.03);
+            color: #b3ffcc;
+        }
+
+        /* AI Command Bar (Bottom Panel) */
+        .prompt-container {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: auto;
+            position: relative;
+        }
+
+        .prompt-input {
+            flex: 1;
+            background: hsla(230, 25%, 5%, 0.85);
+            border: 1px solid var(--border-glow);
+            color: var(--text-main);
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            font-family: var(--font-display);
+            font-size: 0.85rem;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .prompt-input:focus {
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 10px rgba(0, 242, 254, 0.15);
+        }
+
+        /* Suggested Prompts chips */
+        .chips-container {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-bottom: 0.5rem;
+        }
+
+        .chip {
+            background: hsla(230, 15%, 20%, 0.4);
+            border: 1px solid hsla(230, 15%, 25%, 0.3);
+            padding: 0.35rem 0.65rem;
+            border-radius: 15px;
+            font-size: 0.72rem;
+            cursor: pointer;
+            color: var(--text-muted);
+            transition: all 0.2s ease;
+        }
+
+        .chip:hover {
+            color: var(--accent-cyan);
+            border-color: var(--accent-cyan);
+            background: hsla(185, 100%, 50%, 0.05);
+        }
+
+        /* Animations */
+        @keyframes pulse-glow {
+            0% {
+                box-shadow: 0 0 8px var(--accent-cyan-glow);
+                border-color: var(--accent-cyan);
+            }
+            100% {
+                box-shadow: 0 0 18px rgba(0, 242, 254, 0.65);
+                border-color: hsl(195, 100%, 55%);
+            }
+        }
+
+        /* Responsive Columns styling constraints */
+        @media (max-width: 1200px) {
+            main {
+                grid-template-columns: 280px 1fr;
+            }
+            .column:last-child {
+                display: none; /* Hide monitor panel on small screens */
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo-container">
+            <div class="logo-icon"></div>
+            <h1>Agentic ROS Drone Studio</h1>
+        </div>
+        <div class="system-status">
+            <div class="status-dot"></div>
+            <span>ROS 2 Core: Online</span>
+        </div>
+    </header>
+
+    <main>
+        <!-- LEFT COLUMN: HUD & Flight Commands -->
+        <div class="column">
+            <div class="panel">
+                <div class="panel-title">Telemetry HUD <span class="accent">Real-time</span></div>
+                
+                <div class="hud-grid">
+                    <div class="hud-card">
+                        <span class="hud-label">Altitude (Z)</span>
+                        <span class="hud-value highlight-cyan" id="hud-alt">0.0m</span>
+                    </div>
+                    <div class="hud-card">
+                        <span class="hud-label">Coordinates</span>
+                        <span class="hud-value" id="hud-gps">10.0, 10.0</span>
+                    </div>
+                </div>
+
+                <div class="hud-grid">
+                    <div class="hud-card">
+                        <span class="hud-label">Velocity (H/V)</span>
+                        <span class="hud-value" id="hud-vel">0.0 / 0.0</span>
+                    </div>
+                    <div class="hud-card">
+                        <span class="hud-label">Battery</span>
+                        <span class="hud-value highlight-green" id="hud-batt">100.0%</span>
+                        <div class="battery-bar-container">
+                            <div class="battery-bar-fill" id="hud-batt-bar"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flight-status-indicator status-disarmed" id="hud-status-card">
+                    <div class="status-indicator-info">
+                        <span class="hud-label">Autopilot Status</span>
+                        <span style="font-weight: 700; font-size: 0.85rem;" id="hud-status-txt">Disarmed</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel" style="flex: 1;">
+                <div class="panel-title">Manual Override <span class="accent">PX4 Offboard</span></div>
+                
+                <div class="btn-group">
+                    <button class="btn-accent" onclick="sendAction('arm')">Arm Drone</button>
+                    <button class="btn-red" onclick="sendAction('disarm')">Disarm Drone</button>
+                </div>
+
+                <label class="hud-label" style="margin-bottom: 0.25rem; display: block;">Set Flight Mode</label>
+                <select class="select-input" onchange="sendMode(this.value)" id="mode-select">
+                    <option value="HOLD">HOLD (Position Hold)</option>
+                    <option value="OFFBOARD">OFFBOARD (Autonomous Setpoint)</option>
+                    <option value="LAND">LAND (Auto descend)</option>
+                </select>
+
+                <div style="margin-top: auto; display: flex; flex-direction: column; gap: 0.5rem;">
+                    <button onclick="sendAction('reset_simulation')">Reset Simulation</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- MIDDLE COLUMN: 2D Arena & Visuals -->
+        <div class="column" style="flex: 1.5;">
+            <div class="panel simulator-panel">
+                <div class="panel-title">Flight Arena Visualizer <span class="accent" id="arena-scale">100m x 100m Grid</span></div>
+                <div class="canvas-container" id="canvas-container">
+                    <canvas id="sim-canvas"></canvas>
+                </div>
+            </div>
+            
+            <div class="panel" style="height: 180px; min-height: 180px;">
+                <div class="panel-title">Downward Camera Stream <span class="accent">VLM Frame Description</span></div>
+                <div style="flex: 1; background: hsla(230, 25%, 3%, 0.8); border: 1px dashed var(--border-glow); border-radius: 6px; padding: 0.75rem; font-family: var(--font-mono); font-size: 0.75rem; color: var(--accent-green); overflow-y: auto;" id="camera-desc-box">
+                    Ground view: Drone sitting on ground pad. Camera sensors inactive.
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT COLUMN: ROS 2 Topics & Agent Reasoning -->
+        <div class="column">
+            <div class="panel graph-panel">
+                <div class="panel-title">ROS 2 Node Graph <span class="accent">Dynamic Middleware</span></div>
+                <div class="graph-container">
+                    <svg id="node-graph-svg" width="100%" height="100%" style="background: transparent;"></svg>
+                </div>
+            </div>
+
+            <div class="panel topic-panel">
+                <div class="panel-title">ROS 2 Topic Monitor <span class="accent">Active Topics</span></div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Topic</th>
+                                <th>Hz</th>
+                                <th>Latest Payload</th>
+                            </tr>
+                        </thead>
+                        <tbody id="topic-table-body">
+                            <tr>
+                                <td colspan="3" style="text-align: center; color: var(--text-muted)">Awaiting topic telemetry...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="panel reasoning-panel">
+                <div class="panel-title">Agent Terminal <span class="accent">ReAct Monologue</span></div>
+                <div class="terminal" id="terminal-box">
+                    <div style="color: var(--text-muted); font-size: 0.7rem; text-align: center;">AI Cognitive Loop ready. Awaiting user commands.</div>
+                </div>
+                
+                <div class="chips-container" style="margin-top: 0.75rem;">
+                    <div class="chip" onclick="submitSuggested('Take off to 6m, fly to (75, 80) to inspect the thermal pad, then return home.')">🔍 Search Thermal Pad</div>
+                    <div class="chip" onclick="submitSuggested('Fly to (20, 70, 7) to find the stray hiker.')">🚶 Find Stray Hiker</div>
+                    <div class="chip" onclick="submitSuggested('Fly in a circle to inspect the surrounding perimeter.')">🔄 Orbit Perimeter</div>
+                    <div class="chip" onclick="submitSuggested('Initiate emergency return to home pad and land.')">🏠 Return Home</div>
+                </div>
+
+                <div class="prompt-container">
+                    <input type="text" class="prompt-input" id="prompt-in" placeholder="Enter high-level command (e.g. 'Search for the thermal pad')..." onkeydown="if(event.key === 'Enter') submitPrompt()">
+                    <button class="btn-accent" style="padding: 0.5rem 1rem;" onclick="submitPrompt()">SEND</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // WebSocket logic
+        let ws;
+        const host = window.location.host;
+        
+        // Sim State store
+        let currentTelemetry = { x: 10, y: 10, z: 0, yaw: 0, battery: 100, armed: false, mode: 'HOLD', status: 'Disarmed' };
+        let obstacles = [];
+        let targets = [];
+        let lidarRanges = [];
+        let flightTrail = [];
+
+        // Setup HTML Canvas
+        const canvas = document.getElementById("sim-canvas");
+        const ctx = canvas.getContext("2d");
+        
+        function resizeCanvas() {
+            const container = document.getElementById("canvas-container");
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+        }
+        window.addEventListener("resize", resizeCanvas);
+        resizeCanvas();
+
+        function connectWebSocket() {
+            ws = new WebSocket(`ws://${host}/ws`);
+            
+            ws.onopen = () => {
+                console.log("WebSocket connection established.");
+                document.querySelector(".status-dot").style.backgroundColor = "var(--accent-green)";
+                document.querySelector(".status-dot").style.boxShadow = "0 0 8px var(--accent-green)";
+            };
+            
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                
+                // Update local copies
+                currentTelemetry = data.telemetry;
+                obstacles = data.obstacles;
+                targets = data.targets;
+                lidarRanges = data.lidar;
+                
+                // Keep flight trail path
+                if (currentTelemetry.armed && currentTelemetry.z > 0.1) {
+                    flightTrail.push({ x: currentTelemetry.x, y: currentTelemetry.y });
+                    if (flightTrail.length > 500) flightTrail.shift();
+                } else if (!currentTelemetry.armed) {
+                    flightTrail = [];
+                }
+
+                // Update HUD Elements
+                document.getElementById("hud-alt").innerText = `${currentTelemetry.z.toFixed(1)}m`;
+                document.getElementById("hud-gps").innerText = `(${currentTelemetry.x.toFixed(1)}, ${currentTelemetry.y.toFixed(1)})`;
+                
+                const speed = Math.hypot(currentTelemetry.vx, currentTelemetry.vy).toFixed(1);
+                const climb = Math.abs(currentTelemetry.vz).toFixed(1);
+                document.getElementById("hud-vel").innerText = `${speed}m/s / ${climb}m/s`;
+                
+                document.getElementById("hud-batt").innerText = `${currentTelemetry.battery.toFixed(1)}%`;
+                const battFill = document.getElementById("hud-batt-bar");
+                battFill.style.width = `${currentTelemetry.battery}%`;
+                if (currentTelemetry.battery < 20) {
+                    battFill.style.background = "var(--accent-red)";
+                } else if (currentTelemetry.battery < 50) {
+                    battFill.style.background = "orange";
+                } else {
+                    battFill.style.background = "linear-gradient(90deg, var(--accent-red), var(--accent-green))";
+                }
+
+                const statusCard = document.getElementById("hud-status-card");
+                const statusTxt = document.getElementById("hud-status-txt");
+                statusTxt.innerText = currentTelemetry.status;
+                
+                if (currentTelemetry.armed) {
+                    statusCard.className = "flight-status-indicator status-armed";
+                    statusTxt.style.color = "var(--accent-red)";
+                } else {
+                    statusCard.className = "flight-status-indicator status-disarmed";
+                    statusTxt.style.color = "var(--text-muted)";
+                }
+                
+                // Update mode select to match telemetry
+                document.getElementById("mode-select").value = currentTelemetry.mode;
+
+                // Update VLM Camera Description
+                document.getElementById("camera-desc-box").innerText = data.camera_desc;
+
+                // Update Topics Table
+                updateTopicsTable(data.ros_topics);
+
+                // Update Nodes Graph Packets Flow
+                animatePackets(data.ros_packets);
+
+                // Update Agent thoughts logs
+                updateThoughtTerminal(data.thought_logs);
+            };
+            
+            ws.onclose = () => {
+                console.log("WebSocket disconnected. Retrying in 3 seconds...");
+                document.querySelector(".status-dot").style.backgroundColor = "var(--accent-red)";
+                document.querySelector(".status-dot").style.boxShadow = "0 0 8px var(--accent-red)";
+                setTimeout(connectWebSocket, 3000);
+            };
+        }
+
+        connectWebSocket();
+
+        // Send actions to server
+        function sendAction(type) {
+            ws.send(JSON.stringify({ type: type }));
+        }
+
+        function sendMode(mode) {
+            ws.send(JSON.stringify({ type: 'mode', mode: mode }));
+        }
+
+        function submitPrompt() {
+            const input = document.getElementById("prompt-in");
+            const cmd = input.value.trim();
+            if (cmd) {
+                ws.send(JSON.stringify({ type: 'user_command', command: cmd }));
+                input.value = "";
+            }
+        }
+
+        function submitSuggested(promptText) {
+            document.getElementById("prompt-in").value = promptText;
+            submitPrompt();
+        }
+
+        // Render Topics Table
+        function updateTopicsTable(topics) {
+            const tbody = document.getElementById("topic-table-body");
+            if (!topics || topics.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted)">No active topics</td></tr>`;
+                return;
+            }
+            
+            tbody.innerHTML = topics.map(t => {
+                let p = JSON.stringify(t.payload);
+                if (p.length > 55) p = p.slice(0, 52) + "...";
+                return `
+                    <tr>
+                        <td class="topic-name">${t.name}</td>
+                        <td class="topic-hz">${t.hz} Hz</td>
+                        <td class="topic-payload">${p}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Render Agent Thought Terminal
+        let lastLogCount = 0;
+        function updateThoughtTerminal(logs) {
+            const box = document.getElementById("terminal-box");
+            if (logs.length === lastLogCount) return;
+            lastLogCount = logs.length;
+            
+            box.innerHTML = logs.map(l => {
+                let c = "";
+                if (l.sender === "USER") c = "log-user";
+                else if (l.sender === "AGENT_THOUGHT") c = "log-thought";
+                else if (l.sender === "ROBOT_ACTION") c = "log-action";
+                else if (l.sender === "SYSTEM" || l.sender === "AUTOPILOT") c = "log-system";
+                
+                return `
+                    <div class="log-entry ${c}">
+                        <span class="log-time">[${l.timestamp}] ${l.sender}</span>
+                        <span>${escapeHtml(l.text)}</span>
+                    </div>
+                `;
+            }).join('');
+            
+            box.scrollTop = box.scrollHeight;
+        }
+
+        function escapeHtml(text) {
+            return text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        // ----------------------------------------------------------------------
+        // 2D Simulator Canvas Rendering Loop
+        // ----------------------------------------------------------------------
+        let rotorAngle = 0;
+        
+        function drawSimulator() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Map parameters
+            const size = Math.min(canvas.width, canvas.height) * 0.9;
+            const offsetX = (canvas.width - size) / 2;
+            const offsetY = (canvas.height - size) / 2;
+            
+            // Grid Coordinate transformations
+            function toCanvasCoords(x, y) {
+                // grid is 0-100 x 0-100
+                const cx = offsetX + (x / 100) * size;
+                const cy = offsetY + (1.0 - y / 100) * size; // flip y for standard geometry representation
+                return { x: cx, y: cy };
+            }
+
+            // Draw grid lines
+            ctx.strokeStyle = "hsla(230, 20%, 15%, 0.4)";
+            ctx.lineWidth = 1;
+            for (let i = 0; i <= 10; i++) {
+                const pStartH = toCanvasCoords(0, i * 10);
+                const pEndH = toCanvasCoords(100, i * 10);
+                ctx.beginPath();
+                ctx.moveTo(pStartH.x, pStartH.y);
+                ctx.lineTo(pEndH.x, pEndH.y);
+                ctx.stroke();
+
+                const pStartV = toCanvasCoords(i * 10, 0);
+                const pEndV = toCanvasCoords(i * 10, 100);
+                ctx.beginPath();
+                ctx.moveTo(pStartV.x, pStartV.y);
+                ctx.lineTo(pEndV.x, pEndV.y);
+                ctx.stroke();
+            }
+
+            // Draw Map Boundaries / Geofence
+            ctx.strokeStyle = "hsla(230, 15%, 25%, 0.6)";
+            ctx.lineWidth = 2;
+            ctx.strokeRect(offsetX, offsetY, size, size);
+
+            // Draw Home Pad (10, 10)
+            const home = toCanvasCoords(10, 10);
+            ctx.strokeStyle = "var(--accent-cyan)";
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([4, 4]);
+            ctx.beginPath();
+            ctx.arc(home.x, home.y, size * 0.04, 0, 2 * Math.PI);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.fillStyle = "hsla(185, 100%, 50%, 0.15)";
+            ctx.fill();
+            ctx.fillStyle = "var(--accent-cyan)";
+            ctx.font = "10px Outfit";
+            ctx.textAlign = "center";
+            ctx.fillText("H", home.x, home.y + 3);
+
+            // Draw Targets
+            targets.forEach(t => {
+                const pos = toCanvasCoords(t.x, t.y);
+                
+                // Pulsing animation
+                const pulse = 4 + Math.sin(Date.now() / 200) * 2;
+                
+                ctx.shadowColor = t.found ? "var(--accent-green)" : "orange";
+                ctx.shadowBlur = 10;
+                
+                ctx.fillStyle = t.found ? "var(--accent-green)" : "orange";
+                ctx.beginPath();
+                ctx.arc(pos.x, pos.y, pulse, 0, 2 * Math.PI);
+                ctx.fill();
+                
+                // Clear shadow for next draws
+                ctx.shadowBlur = 0;
+
+                ctx.font = "8px Outfit";
+                ctx.fillStyle = varColor(t.found ? '--accent-green' : '--text-muted');
+                ctx.fillText(t.name, pos.x, pos.y - 10);
+            });
+
+            // Draw Obstacles
+            obstacles.forEach(o => {
+                const pos = toCanvasCoords(o.x, o.y);
+                const r = (o.radius / 100) * size;
+                
+                // Shadow / Glow
+                ctx.shadowColor = "var(--accent-red)";
+                ctx.shadowBlur = 8;
+                
+                // Circular gradient
+                const grad = ctx.createRadialGradient(pos.x, pos.y, r * 0.2, pos.x, pos.y, r);
+                grad.addColorStop(0, "hsla(355, 100%, 65%, 0.3)");
+                grad.addColorStop(1, "hsla(355, 100%, 45%, 0.08)");
+                
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                ctx.arc(pos.x, pos.y, r, 0, 2 * Math.PI);
+                ctx.fill();
+                
+                ctx.strokeStyle = "hsla(355, 100%, 55%, 0.4)";
+                ctx.lineWidth = 1;
+                ctx.stroke();
+                
+                ctx.shadowBlur = 0;
+
+                // Name label
+                ctx.font = "8px Outfit";
+                ctx.fillStyle = "hsla(355, 100%, 75%, 0.5)";
+                ctx.fillText(o.name, pos.x, pos.y + 4);
+            });
+
+            // Draw Flight Trail path
+            if (flightTrail.length > 1) {
+                ctx.strokeStyle = "hsla(185, 100%, 50%, 0.35)";
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                const p0 = toCanvasCoords(flightTrail[0].x, flightTrail[0].y);
+                ctx.moveTo(p0.x, p0.y);
+                for (let i = 1; i < flightTrail.length; i++) {
+                    const pi = toCanvasCoords(flightTrail[i].x, flightTrail[i].y);
+                    ctx.lineTo(pi.x, pi.y);
+                }
+                ctx.stroke();
+            }
+
+            // Draw Drone and Sensors
+            const drone = toCanvasCoords(currentTelemetry.x, currentTelemetry.y);
+            
+            // Draw sensor rays (LIDAR)
+            if (currentTelemetry.armed && lidarRanges.length === 8) {
+                ctx.lineWidth = 0.8;
+                for (let i = 0; i < 8; i++) {
+                    const angle = currentTelemetry.yaw + (i * 45);
+                    const angle_rad = (angle * Math.PI) / 180;
+                    
+                    const lDist = lidarRanges[i];
+                    // Calculate intersection point relative to drone coordinates
+                    const endX = currentTelemetry.x + Math.cos(angle_rad) * lDist;
+                    const endY = currentTelemetry.y + Math.sin(angle_rad) * lDist;
+                    const pEnd = toCanvasCoords(endX, endY);
+                    
+                    // Colors change to red if obstacle is very close
+                    ctx.strokeStyle = lDist < 10 ? "var(--accent-red)" : "hsla(140, 100%, 48%, 0.35)";
+                    ctx.beginPath();
+                    ctx.moveTo(drone.x, drone.y);
+                    ctx.lineTo(pEnd.x, pEnd.y);
+                    ctx.stroke();
+                }
+
+                // Camera FOV Footprint Circle on the Ground
+                const cameraRadius = (currentTelemetry.z * 1.2 / 100) * size;
+                if (cameraRadius > 2) {
+                    ctx.strokeStyle = "hsla(185, 100%, 50%, 0.15)";
+                    ctx.lineWidth = 1;
+                    ctx.setLineDash([2, 3]);
+                    ctx.beginPath();
+                    ctx.arc(drone.x, drone.y, cameraRadius, 0, 2 * Math.PI);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                }
+            }
+
+            // Draw Drone Icon (Scaled based on altitude to look 3D)
+            const scale = 1.0 + (currentTelemetry.z / 30.0) * 0.8; // scales up to 1.8x at 30m
+            const dSize = size * 0.025 * scale;
+            
+            ctx.save();
+            ctx.translate(drone.x, drone.y);
+            ctx.rotate((-currentTelemetry.yaw * Math.PI) / 180); // match map yaw rotation
+
+            if (currentTelemetry.armed) {
+                ctx.shadowColor = "var(--accent-cyan)";
+                ctx.shadowBlur = 10;
+            }
+
+            // Quadcopter Arm 1
+            ctx.strokeStyle = "var(--text-muted)";
+            ctx.lineWidth = 2.5 * scale;
+            ctx.beginPath();
+            ctx.moveTo(-dSize, -dSize);
+            ctx.lineTo(dSize, dSize);
+            ctx.moveTo(-dSize, dSize);
+            ctx.lineTo(dSize, -dSize);
+            ctx.stroke();
+            
+            // Core body
+            ctx.fillStyle = currentTelemetry.armed ? "var(--accent-cyan)" : "var(--text-muted)";
+            ctx.beginPath();
+            ctx.arc(0, 0, dSize * 0.4, 0, 2 * Math.PI);
+            ctx.fill();
+
+            // Rotors (Blades)
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.4)";
+            ctx.lineWidth = 1 * scale;
+            rotorAngle += currentTelemetry.armed ? 0.35 : 0;
+            
+            const rRadius = dSize * 0.45;
+            
+            function drawRotor(rx, ry) {
+                ctx.beginPath();
+                ctx.arc(rx, ry, rRadius, 0, 2 * Math.PI);
+                ctx.stroke();
+                
+                // Rotated line
+                ctx.beginPath();
+                ctx.moveTo(rx - Math.cos(rotorAngle)*rRadius, ry - Math.sin(rotorAngle)*rRadius);
+                ctx.lineTo(rx + Math.cos(rotorAngle)*rRadius, ry + Math.sin(rotorAngle)*rRadius);
+                ctx.stroke();
+            }
+
+            drawRotor(-dSize, -dSize);
+            drawRotor(dSize, -dSize);
+            drawRotor(-dSize, dSize);
+            drawRotor(dSize, dSize);
+
+            ctx.restore();
+            ctx.shadowBlur = 0;
+            
+            requestAnimationFrame(drawSimulator);
+        }
+
+        // Get variable color helper
+        function varColor(variableName) {
+            return getComputedStyle(document.documentElement).getPropertyValue(variableName).trim();
+        }
+
+        // Run Sim loop
+        requestAnimationFrame(drawSimulator);
+
+
+        // ----------------------------------------------------------------------
+        // ROS 2 Graph Renderer (SVG)
+        // ----------------------------------------------------------------------
+        const nodes = {
+            "user_agent_node": { x: 70, y: 120, label: "AI Agent", color: "var(--accent-purple)" },
+            "px4_fmu_node": { x: 280, y: 120, label: "PX4 Autopilot", color: "var(--accent-cyan)" },
+            "perception_node": { x: 180, y: 40, label: "YOLO/VLM Node", color: "var(--accent-green)" },
+            "telemetry_pub_node": { x: 180, y: 200, label: "Telemetry Pub", color: "var(--text-muted)" }
+        };
+
+        const topics = [
+            { from: "px4_fmu_node", to: "user_agent_node", name: "/px4/telemetry", path: "M 280 120 L 70 120" },
+            { from: "user_agent_node", to: "px4_fmu_node", name: "/px4/cmd_pose", path: "M 70 120 L 280 120" },
+            { from: "px4_fmu_node", to: "perception_node", name: "/camera/image_raw", path: "M 280 120 Q 240 60 180 40" },
+            { from: "perception_node", to: "user_agent_node", name: "/perception/detections", path: "M 180 40 Q 110 60 70 120" },
+            { from: "px4_fmu_node", to: "telemetry_pub_node", name: "/px4/telemetry", path: "M 280 120 Q 240 180 180 200" }
+        ];
+
+        function initGraph() {
+            const svg = document.getElementById("node-graph-svg");
+            svg.innerHTML = "";
+            
+            // Draw Topic Channels (Paths)
+            topics.forEach((t, i) => {
+                const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                path.setAttribute("d", t.path);
+                path.setAttribute("stroke", "hsla(230, 15%, 25%, 0.4)");
+                path.setAttribute("stroke-width", "2");
+                path.setAttribute("fill", "none");
+                path.setAttribute("id", `topic-path-${i}`);
+                svg.appendChild(path);
+                
+                // Add tiny label
+                const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                // Midpoint calculation
+                const midX = (nodes[t.from].x + nodes[t.to].x) / 2;
+                const midY = (nodes[t.from].y + nodes[t.to].y) / 2 - 5;
+                text.setAttribute("x", midX);
+                text.setAttribute("y", midY);
+                text.setAttribute("font-size", "7px");
+                text.setAttribute("fill", "var(--text-muted)");
+                text.setAttribute("text-anchor", "middle");
+                text.textContent = t.name.split("/")[2]; // short name
+                svg.appendChild(text);
+            });
+
+            // Draw Nodes
+            Object.keys(nodes).forEach(key => {
+                const n = nodes[key];
+                
+                // Circle Node
+                const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
+                
+                const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                circle.setAttribute("cx", n.x);
+                circle.setAttribute("cy", n.y);
+                circle.setAttribute("r", "12");
+                circle.setAttribute("fill", "hsla(230, 25%, 5%, 0.9)");
+                circle.setAttribute("stroke", n.color);
+                circle.setAttribute("stroke-width", "2");
+                group.appendChild(circle);
+
+                // Glow filter support
+                circle.style.filter = `drop-shadow(0px 0px 4px ${n.color})`;
+
+                // Text Label
+                const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                text.setAttribute("x", n.x);
+                text.setAttribute("y", n.y + 24);
+                text.setAttribute("font-size", "8px");
+                text.setAttribute("fill", "var(--text-main)");
+                text.setAttribute("text-anchor", "middle");
+                text.setAttribute("font-weight", "600");
+                text.textContent = n.label;
+                group.appendChild(text);
+
+                svg.appendChild(group);
+            });
+        }
+
+        initGraph();
+
+        // Animate packets flowing along paths
+        function animatePackets(packets) {
+            if (!packets || packets.length === 0) return;
+            const svg = document.getElementById("node-graph-svg");
+            
+            packets.forEach(p => {
+                // Find matching topic path index
+                const tIndex = topics.findIndex(t => t.from === p.from && t.to === p.to && t.topic === p.topic);
+                if (tIndex === -1) return;
+                
+                const pathEl = document.getElementById(`topic-path-${tIndex}`);
+                if (!pathEl) return;
+                
+                // Create packet element
+                const packet = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                packet.setAttribute("r", "4");
+                
+                // Set packet color matching the destination node
+                const destColor = nodes[p.to].color;
+                packet.setAttribute("fill", destColor);
+                packet.style.filter = `drop-shadow(0px 0px 5px ${destColor})`;
+                
+                svg.appendChild(packet);
+                
+                // Calculate path length
+                const pathLen = pathEl.getTotalLength();
+                let start = null;
+                const duration = 800; // ms
+                
+                function step(timestamp) {
+                    if (!start) start = timestamp;
+                    const progress = (timestamp - start) / duration;
+                    
+                    if (progress < 1) {
+                        const point = pathEl.getPointAtLength(progress * pathLen);
+                        packet.setAttribute("cx", point.x);
+                        packet.setAttribute("cy", point.y);
+                        requestAnimationFrame(step);
+                    } else {
+                        // Remove packet when finished
+                        if (packet.parentNode) {
+                            packet.parentNode.removeChild(packet);
+                        }
+                    }
+                }
+                requestAnimationFrame(step);
+            });
+        }
+    </script>
+</body>
+</html>
