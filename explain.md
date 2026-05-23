@@ -6,6 +6,8 @@ This document provides a technical and structural analysis of the three leading 
 
 ## 1. AgenticROS (LLM-to-ROS 2 Message Mapping)
 
+![Agentic Drone Control Architecture](assets/agentic_architecture.png)
+
 **Concept:** Translates high-level natural language requests directly into ROS 2 topic publications, service requests, and action triggers via a dynamic interface mapper.
 
 ### Architecture Diagram
@@ -158,6 +160,8 @@ To bridge this, we use a **Decoupled Asynchronous Controller**:
 ---
 
 ## 5. Mathematical & Spatial Grounding in Prompting
+
+![Visual Grounding Projection Diagram](assets/visual_grounding_projection.png)
 
 To navigate successfully, the LLM must translate visual pixels or relative positions into metric setpoints. This is accomplished using **Visual Coordinate Projection**:
 
